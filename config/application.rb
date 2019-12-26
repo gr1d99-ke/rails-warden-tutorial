@@ -33,5 +33,24 @@ module RailsWarden
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    config.middleware.use Warden::Manager do |manager|
+      manager.default_strategies :secret
+      manager.failure_app =->(env) { [401, { "Content-Type" => "application/json" }, [{ message: "Authentication failure" }.to_json]] }
+    end
+
+    Warden::Strategies.add(:secret) do
+      def authenticate!
+        password = "very secret"
+        req_body = JSON.parse(request.body.read)
+
+        if req_body["secret"] == password
+          user = { name: "Youtube" }
+          success!(user)
+        else
+          fail
+        end
+      end
+    end
   end
 end
